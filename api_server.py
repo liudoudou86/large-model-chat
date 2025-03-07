@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Optional
 
@@ -82,22 +83,51 @@ async def chat(message: Message):
             payload = {
                 "model": "deepseek-chat",
                 "messages": chat_histories[message.user_id],
-                "temperature": 0.7,
+                "stream": True,
+                "response_format": {"type": "text"},
             }
 
-            response = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+            # 使用流式响应处理
+            response = requests.post(
+                API_URL, headers=headers, json=payload, timeout=30, stream=True
+            )
 
             if response.status_code == 200:
-                result = response.json()
-                logger.info(f"API响应内容: {result}")
+                # 初始化完整响应内容
+                full_content = ""
 
+                # 逐行处理流式响应
+                for line in response.iter_lines():
+                    if line:
+                        # 去除 "data: " 前缀并解析 JSON
+                        line_text = line.decode("utf-8")
+                        if line_text.startswith("data: "):
+                            json_str = line_text[6:]  # 跳过 "data: " 前缀
+
+                            # 处理结束标记
+                            if json_str == "[DONE]":
+                                break
+
+                            try:
+                                chunk = json.loads(json_str)
+                                if "choices" in chunk and len(chunk["choices"]) > 0:
+                                    delta = chunk["choices"][0].get("delta", {})
+                                    if "content" in delta:
+                                        content_chunk = delta["content"]
+                                        full_content += content_chunk
+                                        logger.info(f"收到回复: {content_chunk}")
+                                        # 这里可以添加实时发送内容到客户端的代码
+                            except json.JSONDecodeError:
+                                logger.error(f"无法解析JSON: {json_str}")
+
+                # 将完整响应添加到历史记录
                 ai_message = {
                     "role": "assistant",
-                    "content": result["choices"][0]["message"]["content"],
+                    "content": full_content,
                 }
                 chat_histories[message.user_id].append(ai_message)
 
-                return ChatResponse(response=ai_message["content"])
+                return ChatResponse(response=full_content)
             else:
                 logger.error(f"API请求失败: {response.status_code} - {response.text}")
                 return ChatResponse(
