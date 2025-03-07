@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大模型聊天</title>
+    <title>Timi</title>
     <style>
         body {
             margin: 0;
             padding: 20px;
             font-family: Arial, sans-serif;
-            background-color: #1a1a1a;
+            background-color: #292932;
             color: #e0e0e0;
         }
         .chat-container {
@@ -23,7 +23,7 @@
             flex: 1;
             overflow-y: auto;
             padding: 20px;
-            background: #2d2d2d;
+            background: #292932;
             border-radius: 10px;
             margin-bottom: 20px;
         }
@@ -33,7 +33,7 @@
             align-items: flex-start;
         }
         .user-message {
-            background: #3a3a3a;
+            background: #4D6BFE;
             color: #e0e0e0;
             padding: 10px;
             border-radius: 5px;
@@ -42,7 +42,7 @@
             margin-left: auto;
         }
         .bot-message {
-            background: #2b3a4a;
+            background: #31313A;
             color: #e0e0e0;
             padding: 10px;
             border-radius: 5px;
@@ -50,8 +50,8 @@
             max-width: 70%;
         }
         .input-area {
-            padding: 20px;
-            background: #2d2d2d;
+            padding: 10px;
+            background: #45454E;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
             border-radius: 10px;
         }
@@ -66,24 +66,31 @@
             border-radius: 5px;
             font-size: 16px;
             resize: none;
-            height: 20px;  /* 调整高度 */
-            width: 100%;   /* 确保宽度占满 */
-            line-height: 20px;  /* 调整行高 */
-            background: #1e1e1e;  /* 调整为更深的背景色 */
+            height: 60px;
+            width: 100%;
+            line-height: 20px;
+            background: #45454E;
             color: #e0e0e0;
+            overflow-y: auto;
         }
-        textarea::placeholder {
-            color: #888;
+        textarea:focus {
+            outline: none;  /* 移除默认的焦点边框 */
+            border-color: #45454E;  /* 输入框获得焦点时变为主题蓝色 */
+            box-shadow: 0 0 0 1px #45454E;  /* 添加微光效果 */
         }
         button {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            background: #1976d2;
-            color: white;
-            cursor: pointer;
-            height: 40px;  /* 调整按钮高度以匹配输入框 */
-        }
+          padding: 10px 20px;
+          border: none;
+          border-radius: 5px;
+          background: #4D6BFE;
+          color: white;
+          cursor: pointer;
+          height: 40px;  /* 与输入框高度一致 */
+          display: flex;
+          align-items: center;  /* 垂直居中 */
+          justify-content: center;  /* 水平居中 */
+          align-self: center;  /* 使按钮在容器中垂直居中 */
+      }
         button:hover {
             background: #1565c0;
         }
@@ -101,32 +108,58 @@
             100% { transform: rotate(360deg); }
         }
         /* 在样式部分添加新的字体类 */
-                .custom-font {
-                    font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
-                    color: #666;
-                    font-size: 16px;
-                }
-                .custom-font {
-                    font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
-                    color: #e0e0e0;
-                    font-size: 16px;
-                }
-                textarea::placeholder {
-                    color: #888;
-                }
-                .custom-font {
-                    font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
-                    color: #e0e0e0;
-                    font-size: 16px;
-                }
-            </style>
+        .custom-font {
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            color: #666;
+            font-size: 16px;
+        }
+        .custom-font {
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+        textarea::placeholder {
+            color: #888;
+        }
+        .custom-font {
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            color: #e0e0e0;
+            font-size: 16px;
+        }
+        /* 在 style 标签内添加滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a4a;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* 修改聊天历史和文本框的滚动条样式 */
+        .chat-history, textarea {
+            scrollbar-width: thin;
+            scrollbar-color: #4a4a4a #1e1e1e;
+        }
+        </style>
         </head>
         <body>
             <div class="chat-container">
                 <div class="chat-history" id="chatHistory"></div>
                 <div class="input-area">
                     <div class="input-group">
-                        <textarea id="messageInput" class="custom-font" placeholder="请输入消息... (Enter发送，Ctrl+Enter换行)" autocomplete="off"></textarea>
+                        <textarea id="messageInput" class="custom-font" placeholder="发送消息... (Enter发送, Ctrl+Enter换行)" autocomplete="off"></textarea>
+                        <button onclick="sendMessage()" class="custom-font">发送</button>
                         <button onclick="clearHistory()" class="custom-font">删除会话</button>
                     </div>
                 </div>
@@ -181,7 +214,7 @@
             
             const messageDiv = document.createElement('div');
             messageDiv.className = type === 'user' ? 'user-message' : 'bot-message';
-            messageDiv.innerHTML = `${type === 'user' ? '👤 ' : '🤖 '}${content}`;
+            messageDiv.innerHTML = `${type === 'user' ? '🙍‍♂️ ' : '🤖 '}${content}`;
             
             if (type === 'user') {
                 messageRow.style.justifyContent = 'flex-end';
@@ -189,6 +222,11 @@
             
             messageRow.appendChild(messageDiv);
             chatHistory.appendChild(messageRow);
+            
+            // 添加延时滚动，确保在DOM更新后执行
+            setTimeout(() => {
+                scrollToBottom();
+            }, 0);
         }
 
         function addLoadingMessage() {
